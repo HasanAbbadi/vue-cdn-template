@@ -1,7 +1,7 @@
 <template>
   <div class="counter-container">
     <span>This button modifies the parent's state</span>
-    <button @click="() => num++">{{ num }} 🔥</button>
+    <button @click="increment">{{ count }} 🔥</button>
     <span>This button calls a method defined in the component</span>
     <button @click="localMethod">Local Method</button>
   </div>
@@ -11,8 +11,10 @@
   export default {
     name: "counter",
     props: ["count"],
-    data: () => ({ num: 0 }),
     methods: {
+      increment() {
+        this.$emit("increment");
+      },
       localMethod() {
         alert("This method was defined and called in the component");
       },
