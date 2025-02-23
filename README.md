@@ -47,6 +47,15 @@ git clone https://github.com/HasanAbbadi/vue-cdn-template
 python -m http.server  # or: npx http-server
 ```
 
+## Limitations
+
+Being a hacky solution, it has some limitations (for now):
+
+- No nested components
+- No imports in components
+- No scoped styles
+- No slots
+
 ## Default Project Structure
 
 ```
