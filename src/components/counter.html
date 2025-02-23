@@ -1,0 +1,61 @@
+<template>
+  <div class="counter-container">
+    <span>This button modifies the parent's state</span>
+    <button @click="() => num++">{{ num }} 🔥</button>
+    <span>This button calls a method defined in the component</span>
+    <button @click="localMethod">Local Method</button>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "counter",
+    props: ["count"],
+    data: () => ({ num: 0 }),
+    methods: {
+      localMethod() {
+        alert("This method was defined and called in the component");
+      },
+    },
+  };
+</script>
+
+<style>
+  .counter-container {
+    display: grid;
+    grid-template-columns: 1fr 0.5fr;
+    align-items: center;
+    background-color: var(--clr-neutral-100);
+    padding: 1rem;
+    border-radius: var(--br-600);
+    gap: 1rem;
+    font-weight: var(--fw-bold);
+  }
+
+  button {
+    --bg: var(--clr-primary);
+    --fg: var(--clr-neutral-100);
+
+    background-color: var(--bg);
+    color: var(--fg);
+    border: none;
+    border-radius: var(--br-600);
+    padding: 10px 20px;
+    font-size: var(--fs-200);
+    font-weight: var(--fw-bold);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button:nth-child(2) {
+    --bg: var(--clr-secondary);
+  }
+
+  button:hover {
+    background-color: color-mix(in srgb, var(--bg) 70%, var(--fg));
+  }
+
+  button:active {
+    background-color: color-mix(in srgb, var(--bg) 50%, var(--fg));
+  }
+</style>

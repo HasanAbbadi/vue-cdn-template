@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue App</title>
+    <link rel="stylesheet" href="src/css/base.css" />
+    <link rel="stylesheet" href="src/css/main.css" />
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js"
+        }
+      }
+    </script>
+
+    <div id="app">
+      <div class="container">
+        <h3>Vue CDN Components Parser</h3>
+        <p>Easily create and use components whilst using the Vue cdn</p>
+
+        <ul>
+          <li>Main app is in <code>index.html</code></li>
+          <li>Components are in <code>src/components</code></li>
+          <li>Styles are in <code>src/css</code></li>
+        </ul>
+        <br />
+        <counter :count="count" @increment="count++"></counter>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createApp } from "vue";
+      import VueCDNParser from "./parser.js";
+
+      document.title = "Counter App";
+      const p = new VueCDNParser();
+      await p.use("/src/components/counter.html");
+
+      const app = createApp({
+        data() {
+          return { count: 0 };
+        },
+        template: document.querySelector("#app").innerHTML,
+      });
+
+      p.init(app);
+      app.mount("#app");
+    </script>
+  </body>
+</html>
