@@ -69,7 +69,7 @@ Being a hacky solution, it has some limitations (for now):
 
 - No imports in components (other than nested components)
 - Scoped styles apply to nested components
-- No auto-closing tags
+- No self-closing tags
 - ~~No nested components~~ (fixed using imports)
 - ~~No scoped styles~~ (fixed)
 - ~~No slots~~ (already existed :P)
