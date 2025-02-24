@@ -31,20 +31,36 @@
 </div>
 
 <script type="module">
-...
+// ...
 import VueCDNParser from "./parser.js";
 const parser = new VueCDNParser();
-...
+// ...
 await parser.use("/src/components/counter.html");
-...
+// ...
 </script>
 ```
 
 ## Quick Start
 
+Clone the template and modify it to your liking:
+
 ```bash
 git clone https://github.com/HasanAbbadi/vue-cdn-template
 python -m http.server  # or: npx http-server
+```
+
+or add the script to your import map and use it yourself:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      // this shouldn't be used in production,
+      // but it's fine since this is a prototyping tool
+      "parser": "https://cdn.jsdelivr.net/gh/HasanAbbadi/vue-cdn-template/parser.min.js"
+    }
+  }
+</script>
 ```
 
 ## Limitations
