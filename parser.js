@@ -9,6 +9,10 @@ export default class VueCDNParser {
     });
   }
 
+  nestComponents(mainComponent) {
+    mainComponent.components = this.components;
+  }
+
   async use(pathOrObject) {
     if (typeof pathOrObject === "string") {
       await this.useComponent(pathOrObject);
@@ -45,19 +49,12 @@ export default class VueCDNParser {
     const scriptElement = doc.querySelector("script:not([type]):not([src])");
     const styleElement = doc.querySelector("style");
 
-    if (!templateElement || !scriptElement) {
+    if (!templateElement) {
       console.log(
-        `Template or script not found in component "${name}"; using legacy parser.`
+        `Template not found in component "${name}"; using legacy parser.`
       );
       return this.parseLegacy(htmlContent, name);
     }
-
-    // Extract and process script
-    const scriptContent = scriptElement.textContent;
-    const componentOptions = await this.parseScript(
-      scriptContent,
-      componentPath
-    );
 
     let processedTemplate = templateElement.innerHTML;
 
@@ -78,6 +75,12 @@ export default class VueCDNParser {
         document.head.appendChild(document.createElement("style")).textContent =
           styleContent;
       }
+    }
+    // Extract and process script
+    let componentOptions = { name };
+    if (scriptElement) {
+      const scriptContent = scriptElement.textContent;
+      componentOptions = await this.parseScript(scriptContent, componentPath);
     }
 
     return {
@@ -101,6 +104,7 @@ export default class VueCDNParser {
       });
     }
 
+    const componentParser = new VueCDNParser();
     // Process imports as components
     for (const imp of imports) {
       if (imp.path.endsWith(".html")) {
@@ -115,7 +119,7 @@ export default class VueCDNParser {
           resolvedPath = imp.path;
         }
 
-        await this.use(resolvedPath);
+        await componentParser.use(resolvedPath);
       }
     }
 
@@ -124,7 +128,9 @@ export default class VueCDNParser {
       .replace(/import.*?from.*?;?/g, ""); // Remove imports
 
     try {
-      return new Function(modifiedScript)();
+      const component = new Function(modifiedScript)();
+      componentParser.nestComponents(component);
+      return component;
     } catch (error) {
       throw new Error(`Error parsing component script: ${error}`);
     }
