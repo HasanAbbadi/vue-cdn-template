@@ -51,10 +51,11 @@ python -m http.server  # or: npx http-server
 
 Being a hacky solution, it has some limitations (for now):
 
-- ~~No nested components~~ (fixed using imports)
 - No imports in components (other than nested components)
+- Scoped styles apply to nested components
+- ~~No nested components~~ (fixed using imports)
 - ~~No scoped styles~~ (fixed)
-- ~~No slots~~ (already exists :P)
+- ~~No slots~~ (already existed :P)
 
 ## Default Project Structure
 
