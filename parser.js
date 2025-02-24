@@ -26,17 +26,18 @@ export default class VueCDNParser {
   async useComponent(path) {
     const response = await fetch(path);
     const htmlContent = await response.text();
-    const component = this.parseComponent(
+    const component = await this.parseComponent(
       htmlContent.replace(/<!--.*?-->/gs, ""), // Remove comments
       path
         .split("/")
         .pop()
-        .replace(/\.html$/, "")
+        .replace(/\.html$/, ""),
+      path
     );
     this.components[component.name] = component;
   }
 
-  parseComponent(htmlContent, name) {
+  async parseComponent(htmlContent, name, componentPath) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, "text/html");
 
@@ -53,7 +54,10 @@ export default class VueCDNParser {
 
     // Extract and process script
     const scriptContent = scriptElement.textContent;
-    const componentOptions = this.parseScript(scriptContent);
+    const componentOptions = await this.parseScript(
+      scriptContent,
+      componentPath
+    );
 
     let processedTemplate = templateElement.innerHTML;
 
@@ -82,7 +86,39 @@ export default class VueCDNParser {
     };
   }
 
-  parseScript(scriptContent) {
+  async parseScript(scriptContent, componentPath) {
+    // Extract imports before removing them
+    const imports = [];
+    const importRegex =
+      /import\s+(?:{\s*([^}]+)\s*}|\s*([^{}\s,]+)\s*)\s+from\s+['"]([^'"]+)['"]/g;
+    let match;
+    while ((match = importRegex.exec(scriptContent)) !== null) {
+      const [, namedImports, defaultImport, path] = match;
+      imports.push({
+        names: namedImports ? namedImports.split(",").map((s) => s.trim()) : [],
+        default: defaultImport,
+        path,
+      });
+    }
+
+    // Process imports as components
+    for (const imp of imports) {
+      if (imp.path.endsWith(".html")) {
+        const componentDir = componentPath.split("/").slice(0, -1).join("/");
+
+        let resolvedPath;
+        if (imp.path.startsWith("./") || imp.path.startsWith("../")) {
+          resolvedPath = this.resolvePath(componentDir + "/" + imp.path);
+        } else if (imp.path.startsWith("/")) {
+          resolvedPath = imp.path.slice(1);
+        } else {
+          resolvedPath = imp.path;
+        }
+
+        await this.use(resolvedPath);
+      }
+    }
+
     const modifiedScript = scriptContent
       .replace(/export\s+default/, "return ")
       .replace(/import.*?from.*?;?/g, ""); // Remove imports
@@ -92,6 +128,22 @@ export default class VueCDNParser {
     } catch (error) {
       throw new Error(`Error parsing component script: ${error}`);
     }
+  }
+
+  resolvePath(path) {
+    // Split the path into segments
+    const segments = path.split("/");
+    const resolvedSegments = [];
+
+    for (const segment of segments) {
+      if (segment === "..") {
+        resolvedSegments.pop();
+      } else if (segment !== "." && segment !== "") {
+        resolvedSegments.push(segment);
+      }
+    }
+
+    return resolvedSegments.join("/");
   }
 
   parseLegacy(htmlContent, name) {

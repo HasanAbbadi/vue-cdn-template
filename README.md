@@ -51,8 +51,8 @@ python -m http.server  # or: npx http-server
 
 Being a hacky solution, it has some limitations (for now):
 
-- No nested components
-- No imports in components
+- ~~No nested components~~ (fixed using imports)
+- No imports in components (other than nested components)
 - ~~No scoped styles~~ (fixed)
 - ~~No slots~~ (already exists :P)
 
