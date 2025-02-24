@@ -1,6 +1,7 @@
 export default class VueCDNParser {
   constructor() {
     this.components = {};
+    this.nestedComponents = [];
   }
 
   init(app) {
@@ -15,7 +16,7 @@ export default class VueCDNParser {
 
   async use(pathOrObject) {
     if (typeof pathOrObject === "string") {
-      await this.useComponent(pathOrObject);
+      return await this.useComponent(pathOrObject);
     } else {
       if (this.components[pathOrObject.name]) {
         console.log(
@@ -39,6 +40,7 @@ export default class VueCDNParser {
       path
     );
     this.components[component.name] = component;
+    return component;
   }
 
   async parseComponent(htmlContent, name, componentPath) {
@@ -54,6 +56,13 @@ export default class VueCDNParser {
         `Template not found in component "${name}"; using legacy parser.`
       );
       return this.parseLegacy(htmlContent, name);
+    }
+
+    // Extract and process script
+    let componentOptions = { name };
+    if (scriptElement) {
+      const scriptContent = scriptElement.textContent;
+      componentOptions = await this.parseScript(scriptContent, componentPath);
     }
 
     let processedTemplate = templateElement.innerHTML;
@@ -75,12 +84,6 @@ export default class VueCDNParser {
         document.head.appendChild(document.createElement("style")).textContent =
           styleContent;
       }
-    }
-    // Extract and process script
-    let componentOptions = { name };
-    if (scriptElement) {
-      const scriptContent = scriptElement.textContent;
-      componentOptions = await this.parseScript(scriptContent, componentPath);
     }
 
     return {
@@ -119,7 +122,8 @@ export default class VueCDNParser {
           resolvedPath = imp.path;
         }
 
-        await componentParser.use(resolvedPath);
+        const nestedComponent = await componentParser.use(resolvedPath);
+        this.nestedComponents.push(nestedComponent.name.toLowerCase());
       }
     }
 
@@ -194,15 +198,20 @@ export default class VueCDNParser {
     }
 
     Array.from(rootElements).forEach((root) => {
-      root.setAttribute(`data-v-${uniqueId}`, "");
-
+      this.setAttribute(root, uniqueId);
       const descendants = root.getElementsByTagName("*");
       Array.from(descendants).forEach((descendant) => {
-        descendant.setAttribute(`data-v-${uniqueId}`, "");
+        this.setAttribute(descendant, uniqueId);
       });
     });
 
     return doc.body.innerHTML;
+  }
+
+  setAttribute(element, uniqueId) {
+    if (!this.nestedComponents.includes(element.tagName.toLowerCase())) {
+      element.setAttribute(`data-v-${uniqueId}`, "");
+    }
   }
 
   scopeCSS(styleContent, uniqueId) {

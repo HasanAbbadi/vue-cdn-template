@@ -68,8 +68,8 @@ or add the script to your import map and use it yourself:
 Being a hacky solution, it has some limitations (for now):
 
 - No imports in components (other than nested components)
-- Scoped styles apply to nested components
 - No self-closing tags
+- ~~Scoped styles apply to nested components~~ (fixed)
 - ~~No nested components~~ (fixed using imports)
 - ~~No scoped styles~~ (fixed)
 - ~~No slots~~ (already existed :P)
