@@ -53,7 +53,7 @@ Being a hacky solution, it has some limitations (for now):
 
 - No nested components
 - No imports in components
-- No scoped styles
+- ~~No scoped styles~~ (fixed)
 - No slots
 
 ## Default Project Structure

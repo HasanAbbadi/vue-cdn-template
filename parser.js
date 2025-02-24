@@ -55,24 +55,30 @@ export default class VueCDNParser {
     const scriptContent = scriptElement.textContent;
     const componentOptions = this.parseScript(scriptContent);
 
-    // // Process template and events
-    // const { processedTemplate, emits } = this.processTemplate(
-    //   templateElement.innerHTML,
-    //   componentOptions.methods || {}
-    // );
+    let processedTemplate = templateElement.innerHTML;
 
-    const processedTemplate = templateElement.innerHTML;
-
+    const isScoped = styleElement?.hasAttribute("scoped");
     const styleContent = styleElement?.textContent;
+
     if (styleContent) {
-      document.head.appendChild(document.createElement("style")).textContent =
-        styleContent;
+      if (isScoped) {
+        const style = document.createElement("style");
+
+        const uniqueId = Math.random().toString(36).substring(2, 8);
+        processedTemplate = this.scopeTemplate(processedTemplate, uniqueId);
+        style.textContent = this.scopeCSS(styleContent, uniqueId);
+
+        style.setAttribute("scoped", "");
+        document.head.appendChild(style);
+      } else {
+        document.head.appendChild(document.createElement("style")).textContent =
+          styleContent;
+      }
     }
 
     return {
       ...componentOptions,
       template: processedTemplate,
-      // emits: Array.from(emits),
     };
   }
 
@@ -120,22 +126,57 @@ export default class VueCDNParser {
     }
   }
 
-  // processTemplate(templateContent, methods) {
-  //   const methodNames = new Set(Object.keys(methods));
-  //   const emits = new Set();
-  //   const eventRegex = /@([\w-]+)=["']([^"']*)["']/g;
+  scopeTemplate(templateContent, uniqueId) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(templateContent, "text/html");
+    const rootElements = doc.body.children;
 
-  //   const processedTemplate = templateContent.replace(
-  //     eventRegex,
-  //     (match, event, expr) => {
-  //       if (/^[a-zA-Z_$][\w$]*$/.test(expr) && !methodNames.has(expr)) {
-  //         emits.add(expr);
-  //         return `@${event}="$emit('${expr}')"`;
-  //       }
-  //       return match;
-  //     }
-  //   );
+    if (rootElements.length === 0) {
+      return templateContent;
+    }
 
-  //   return { processedTemplate, emits };
-  // }
+    Array.from(rootElements).forEach((root) => {
+      root.setAttribute(`data-v-${uniqueId}`, "");
+
+      const descendants = root.getElementsByTagName("*");
+      Array.from(descendants).forEach((descendant) => {
+        descendant.setAttribute(`data-v-${uniqueId}`, "");
+      });
+    });
+
+    return doc.body.innerHTML;
+  }
+
+  scopeCSS(styleContent, uniqueId) {
+    const identifier = `[data-v-${uniqueId}]`;
+
+    const rules = styleContent
+      .split("}")
+      .map((rule) => rule.trim())
+      .filter((rule) => rule.length > 0);
+
+    const scopedRules = rules.map((rule) => {
+      const [selectorPart, declaration] = rule
+        .split("{")
+        .map((part) => part.trim());
+      const scopedSelector = this.scopeSelector(selectorPart, identifier);
+      return `${scopedSelector} { ${declaration} }`;
+    });
+
+    return scopedRules.join("\n");
+  }
+
+  scopeSelector(selector, identifier) {
+    // Split selector by combinators (space, >, +, ~), preserving them
+    const parts = selector.split(/(\s+|[>+~])/);
+
+    const scopedParts = parts.map((part) => {
+      if (part.trim() && !/^\s+|[>+~]$/.test(part)) {
+        return `${part}${identifier}`;
+      }
+      return part;
+    });
+
+    return scopedParts.join("");
+  }
 }
